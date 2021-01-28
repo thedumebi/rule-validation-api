@@ -8,7 +8,20 @@ const {
 
 const app = express();
 
-app.use(express.json());
+app.use(express.json({
+    verify: (req, res, buf, encoding) => {
+        try {
+            JSON.parse(buf);
+        } catch (error) {
+            res.status(400).json({
+                message: "Invalid JSON payload passed.",
+                status: "error",
+                data: null
+            });
+            throw Error("Invalid JSON payload passed.")
+        }
+    }
+}));
 
 app.get("/", function (req, res) {
   const result = {
@@ -50,26 +63,11 @@ app.post(
         },
       },
     };
-    if (rule === "eq") {
+    if (value && rule === "eq") {
       if (rule_value === value) {
         res.status(200).json({ ...validateResponse });
-      }
-      res.status(400).json({
-        ...validateResponse,
-        status: "error",
-        message: `field ${field} failed validation.`,
-        data: {
-          ...validateResponse.data,
-          validation: { ...validateResponse.data.validation, error: true },
-        },
-      });
-    } else if (rule === "neq") {
-      if (value !== rule_value) {
-        res.status(200).json({ ...validateResponse });
-      }
-      res
-        .status(400)
-        .json({
+      } else {
+        res.status(400).json({
           ...validateResponse,
           status: "error",
           message: `field ${field} failed validation.`,
@@ -78,46 +76,63 @@ app.post(
             validation: { ...validateResponse.data.validation, error: true },
           },
         });
-    } else if (rule === "gt") {
+      }
+    } else if (value && rule === "neq") {
+      if (value !== rule_value) {
+        res.status(200).json({ ...validateResponse });
+      } else {
+        res.status(400).json({
+          ...validateResponse,
+          status: "error",
+          message: `field ${field} failed validation.`,
+          data: {
+            ...validateResponse.data,
+            validation: { ...validateResponse.data.validation, error: true },
+          },
+        });
+      }
+    } else if (value && rule === "gt") {
       if (value > rule_value) {
         res.status(200).json({ ...validateResponse });
+      } else {
+        res.status(400).json({
+          ...validateResponse,
+          status: "error",
+          message: `field ${field} failed validation.`,
+          data: {
+            ...validateResponse.data,
+            validation: { ...validateResponse.data.validation, error: true },
+          },
+        });
       }
-      res.status(400).json({
-        ...validateResponse,
-        status: "error",
-        message: `field ${field} failed validation.`,
-        data: {
-          ...validateResponse.data,
-          validation: { ...validateResponse.data.validation, error: true },
-        },
-      });
-    } else if (rule === "gte") {
+    } else if (value && rule === "gte") {
       if (value >= rule_value) {
-        console.log("here");
         res.status(200).json({ ...validateResponse });
+      } else {
+        res.status(400).json({
+          ...validateResponse,
+          status: "error",
+          message: `field ${field} failed validation.`,
+          data: {
+            ...validateResponse.data,
+            validation: { ...validateResponse.data.validation, error: true },
+          },
+        });
       }
-      res.status(400).json({
-        ...validateResponse,
-        status: "error",
-        message: `field ${field} failed validation.`,
-        data: {
-          ...validateResponse.data,
-          validation: { ...validateResponse.data.validation, error: true },
-        },
-      });
-    } else if (rule === "contains") {
+    } else if (value && rule === "contains") {
       if (value.includes(rule_value)) {
         res.status(200).json({ ...validateResponse });
+      } else {
+        res.status(400).json({
+          ...validateResponse,
+          status: "error",
+          message: `field ${field} failed validation.`,
+          data: {
+            ...validateResponse.data,
+            validation: { ...validateResponse.data.validation, error: true },
+          },
+        });
       }
-      res.status(400).json({
-        ...validateResponse,
-        status: "error",
-        message: `field ${field} failed validation.`,
-        data: {
-          ...validateResponse.data,
-          validation: { ...validateResponse.data.validation, error: true },
-        },
-      });
     }
   }
 );
