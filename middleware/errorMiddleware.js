@@ -3,58 +3,59 @@ const errorResponse = {
   status: "error",
   data: null,
 };
+
 const requestSchema = {
   rule: Object,
   data: Object ? Object : Array ? Array : String,
 };
 
-exports.invalid_json = function (req, res, next) {
+exports.invalidJson = function (req, res, next) {
   if (req.headers["content-type"] !== "application/json") {
     res
       .status(400)
       .json({ ...errorResponse, message: "Invalid JSON payload passed." });
+  } else {
+    next();
   }
-  next();
 };
 
-exports.required_field_error = function (req, res, next) {
+exports.requiredFieldError = function (req, res, next) {
   Object.keys(req.body).length !== 0 &&
     Object.keys(requestSchema).forEach((element, index) => {
       if (!Object.keys(req.body).includes(Object.keys(requestSchema)[index])) {
         res
           .status(400)
           .json({ ...errorResponse, message: `${element} is required.` });
+      } else {
+        next();
       }
-      next();
     });
 };
 
-exports.field_type_error = function (req, res, next) {
+exports.fieldTypeError = function (req, res, next) {
   if (
     req.body.rule &&
-    typeof req.body["rule"] !== typeof requestSchema.rule()
+    Object.getPrototypeOf(req.body.rule) !== Object.prototype
   ) {
-    res
-      .status(400)
-      .json({
-        ...errorResponse,
-        message: `rule should be a|an ${typeof requestSchema.rule()}.`,
-      });
+    res.status(400).json({
+      ...errorResponse,
+      message: `rule should be an ${typeof requestSchema.rule()}.`,
+    });
+  } else {
+    next();
   }
-  next();
 };
 
-exports.wrong_data_field = function (req, res, next) {
+exports.wrongDataField = function (req, res, next) {
   if (
     req.body.rule.field &&
     !Object.keys(req.body.data).includes(req.body.rule.field)
   ) {
-    res
-      .status(400)
-      .json({
-        ...errorResponse,
-        message: `field ${req.body.rule.field} is missing from data.`,
-      });
+    res.status(400).json({
+      ...errorResponse,
+      message: `field ${req.body.rule.field} is missing from data.`,
+    });
+  } else {
+    next();
   }
-  next();
 };
